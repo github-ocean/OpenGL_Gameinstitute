@@ -10,25 +10,22 @@ const int gWindowWidth = 800;
 const int gWindowHight = 600;
 bool gFullscreen = false;
 GLFWwindow* gWindow = NULL;
+bool gWireframe = false;
 
 const GLchar* vertexShaderSrc =
 "#version 330 core\n"
 "layout (location = 0) in vec3 pos;"
-"layout (location = 1) in vec3 color;"
-"out vec3 vert_color;"
 "void main()"
 "{"
-"	vert_color = color;"	
 "	gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);"
 "}";
 
 const GLchar* fragmentShaderSrc =
 "#version 330 core\n"
-"in vec3 vert_color;"
 "out vec4 frag_color;"
 "void main()"
 "{"
-"	frag_color = vec4(vert_color, 1.0f);"
+"	frag_color = vec4(0.35, 0.96, 0.3, 1.0f);"
 "}";
 
 void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -44,13 +41,18 @@ int main()
 	}	
 
 	GLfloat Vertices[] = {
-			// POSITION				COLOR
-		 0.0f,  0.5f, 0.0f,		1.0f, 0.0f, 0.0f, // Top
-		 0.5f, -0.5f, 0.0f,		0.0f, 1.0f, 0.0f, // Right
-		-0.5f, -0.5f, 0.0f,		0.0f, 0.0f, 1.0f, // Left
+		-0.5f,  0.5f, 0.0f,
+		 0.5f,  0.5f, 0.0f,
+		 0.5f, -0.5f, 0.0f,
+		-0.5f, -0.5f, 0.0f
 	};
 
-	GLuint vbo, vao;
+	GLuint indices[] = {
+		0, 1, 2,	// Triangle 1
+		0, 2, 3		// Triangle 2
+	};
+
+	GLuint vbo, ibo, vao;
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
@@ -59,15 +61,16 @@ int main()
 	glBindVertexArray(1);
 
 	// POSITION
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, NULL);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	glEnableVertexAttribArray(0);
 
-	// COLOR
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, (GLvoid*)(sizeof(GLfloat) * 3));
-	glEnableVertexAttribArray(1);
+	glGenBuffers(1, &ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	GLint result;
 	GLchar infoLog[512];
+
 	GLuint vs = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vs, 1, &vertexShaderSrc, NULL);
 	glCompileShader(vs);
@@ -114,7 +117,7 @@ int main()
 		glUseProgram(shaderProgram);
 
 		glBindVertexArray(vao);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
 		glfwSwapBuffers(gWindow);
@@ -183,6 +186,19 @@ void glfw_onKey(GLFWwindow* window, int key, int scancode, int action, int mode)
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 	{
 		glfwSetWindowShouldClose(window, GL_TRUE);
+	}
+
+	if (key == GLFW_KEY_W && action == GLFW_PRESS)
+	{
+		gWireframe = !gWireframe;
+		if (gWireframe)
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
+		else
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
 	}
 }
 
